@@ -1,0 +1,5 @@
+manifest_version = 2
+name = "Fanout starter for Rust"
+description = "Implements Fanout handlers for WebSockets, SSE, etc."
+authors = ["<oss@fastly.com>"]
+language = "rust"
