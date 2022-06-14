@@ -89,11 +89,9 @@ fn handle(req: Request) -> Result<Response, Error> {
 fn main() -> Result<(), Error> {
     let mut req = Request::from_client();
 
-    if req.get_header_str("Grip-Sig").is_some() {
-        // if the request came from Fanout, process it normally
-        Ok(handle(req)?.send_to_client())
-    } else {
-        // otherwise, tell the subsystem that the request should be routed
+    if !(req.get_header_str("Grip-Sig").is_some()) {
+        // if the request didn't come through Fanout,
+        // tell the subsystem that the request should be routed
         // through Fanout first
 
         if req.get_body_mut().read_chunks(1).next().is_some() {
@@ -105,5 +103,8 @@ fn main() -> Result<(), Error> {
         // despite the name, this function works for both http requests and
         // websockets. we plan to update the SDK to make this more intuitive
         Ok(req.upgrade_websocket("self")?)
+    } else {
+        // if the request came from Fanout, process it with handle()
+        Ok(handle(req)?.send_to_client())
     }
 }
