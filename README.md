@@ -1,4 +1,4 @@
-# Compute@Edge Fanout starter kit for Rust
+# Fanout Starter Kit for Rust
 
 [![Deploy to Fastly](https://deploy.edgecompute.app/button)](https://deploy.edgecompute.app/deploy)
 
