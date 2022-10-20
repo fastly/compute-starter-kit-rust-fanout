@@ -34,7 +34,7 @@ curl \
 
 For each call, the app is actually invoked twice. 
 
-1. Initially, a client request arrives at the app without having been routed through the Fanout proxy yet. The app checks for this via the presence of a `Grip-Sig` header. If that header is not present, the app calls `req.upgrade_websocket("self")` and exits. This tells the subsystem that the connection should be routed through Fanout. Despite the name of this function, it is used for both WebSocket requests and HTTP requests controlled by GRIP.
+1. Initially, a client request arrives at the app without having been routed through the Fanout proxy yet. The app checks for this via the presence of a `Grip-Sig` header. If that header is not present, the app calls `req.handoff_fanout("self")` and exits. This tells the subsystem that the connection should be routed through Fanout, and is used for HTTP requests controlled by GRIP.
 
 2. Since `self` refers to the same app, a second request is made to the same app, this time coming through Fanout. The app checks for this, and then handles the request accordingly (in `handle()`).
 

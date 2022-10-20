@@ -50,7 +50,7 @@ fn main() -> Result<(), Error> {
             handle_fanout(req, "test").send_to_client()
         } else {
             // Not from fanout, hand it off to Fanout to manage
-            req.upgrade_websocket("self")?
+            req.handoff_fanout("self")?
         });
     }
 
