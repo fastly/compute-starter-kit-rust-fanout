@@ -2,4 +2,4 @@ authors = ["<oss@fastly.com>"]
 description = "Implements Fanout handlers for WebSockets, SSE, etc."
 language = "rust"
 manifest_version = 2
-name = "Fanout starter for Rust"
+name = "Push messaging using Fanout"
