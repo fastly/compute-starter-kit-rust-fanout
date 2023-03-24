@@ -41,6 +41,8 @@ fn handle_fanout(req: Request, chan: &str) -> Response {
 }
 
 fn main() -> Result<(), Error> {
+    // Log service version
+    println!("FASTLY_SERVICE_VERSION: {}", std::env::var("FASTLY_SERVICE_VERSION").unwrap_or_else(|_| String::new()));
     let req = Request::from_client();
 
     // Request is a stream request - from client, or from fanout
