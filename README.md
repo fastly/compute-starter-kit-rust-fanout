@@ -2,9 +2,9 @@
 
 [![Deploy to Fastly](https://deploy.edgecompute.app/button)](https://deploy.edgecompute.app/deploy)
 
-Learn about Fastly Compute@Edge with Fanout using a basic starter that demonstrates basic Fanout handlers.
+Learn about Fastly Compute with Fanout using a basic starter that demonstrates basic Fanout handlers.
 
-**For more details about this and other starter kits for Compute@Edge, see the [Fastly Developer Hub](https://developer.fastly.com/solutions/starters/)**.
+**For more details about this and other starter kits for Compute, see the [Fastly Developer Hub](https://developer.fastly.com/solutions/starters/)**.
 
 ## Setup
 
@@ -40,7 +40,7 @@ For each call, the app is actually invoked twice.
 
 ## Note
 
-This app is not currently supported in Fastly's [local development server](https://developer.fastly.com/learning/compute/testing/#running-a-local-testing-server), as the development server does not support Fanout features. To experiment with Fanout, you will need to publish this project to your Fastly Compute@Edge service. using the `fastly compute publish` command.
+This app is not currently supported in Fastly's [local development server](https://developer.fastly.com/learning/compute/testing/#running-a-local-testing-server), as the development server does not support Fanout features. To experiment with Fanout, you will need to publish this project to your Fastly Compute service. using the `fastly compute publish` command.
 
 ## Security issues
 
