@@ -3,10 +3,10 @@ use fastly::Response;
 
 /// Returns a GRIP response to initialize a stream
 ///
-/// When Compute@Edge receives a non-WebSocket request (i.e. normal HTTP) and wants
+/// When Compute receives a non-WebSocket request (i.e. normal HTTP) and wants
 /// to make it long lived (longpoll or SSE), we call handoff_fanout on it, and
 /// Fanout will then forward that request to the nominated backend.  In this app,
-/// that backend is this same Compute@Edge service, where we then need to respond
+/// that backend is this same Compute service, where we then need to respond
 /// with some Grip headers to tell Fanout to hold the connection for streaming.
 /// This function constructs such a response.
 pub fn grip_response(ctype: &str, ghold: &str, chan: &str) -> Response {
