@@ -1,4 +1,3 @@
-use fastly::experimental::RequestUpgradeWebsocket;
 use fastly::http::StatusCode;
 use fastly::{Error, Request, Response};
 
