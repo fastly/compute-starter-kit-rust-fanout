@@ -2,41 +2,47 @@
 
 [![Deploy to Fastly](https://deploy.edgecompute.app/button)](https://deploy.edgecompute.app/deploy)
 
-Learn about Fastly Compute with Fanout using a basic starter that demonstrates basic Fanout handlers.
+Install this starter kit to use Fanout. It routes incoming requests through the Fanout GRIP proxy and on to an origin. It also provides some endpoints for testing subscriptions without an origin.
+
+There is no need to modify this kit. It is production-ready for typical Fanout usage that coordinates with an origin. However, if you would like to implement Fanout logic at the edge, this kit is also a good starting point for that and you can modify it to fit your needs. See the test endpoints for inspiration.
 
 **For more details about this and other starter kits for Compute, see the [Fastly Documentation Hub](https://www.fastly.com/documentation/solutions/starters/)**.
 
 ## Setup
 
-The app expects a configured backend named "self" that points back to app itself. For example, if the service has a domain `foo.edgecompute.app`, then you'll need to create a backend on the service named "self" with the destination host set to `foo.edgecompute.app` and port 443. Also set 'Override Host' to the same host value.
+The app expects a configured backend named "origin" where Fanout-capable requests should be forwarded to.
 
-## Endpoints
+Additionally, for the test endpoints to work, the app expects a configured backend named "self" that points back to app itself. For example, if the service has a domain `foo.edgecompute.app`, then you'll need to create a backend on the service named "self" with the destination host set to `foo.edgecompute.app` and port 443. Also set "Override Host" to the same host value.
 
-The app exposes the following endpoints to clients:
+## Test Endpoints
 
-* `/ws`: bi-directional WebSocket
-* `/stream`: HTTP streaming of `text/plain`
-* `/sse`: SSE (streaming of `text/event-stream`)
-* `/response`: Long-polling
+For requests made to domains ending in `.edgecompute.app`, the app will handle requests to the following endpoints without forwarding to the origin:
 
-Connecting to any endpoint will subscribe the connection to channel "test". The WebSocket endpoint echos back any messages it receives from the client.
+* `/test/websocket`: bi-directional WebSocket
+* `/test/stream`: HTTP streaming of `text/plain`
+* `/test/sse`: SSE (streaming of `text/event-stream`)
+* `/test/long-poll`: Long-polling
 
-Data can be sent to the connections via the GRIP publish endpoint at `https://fanout.fastly.com/{service-id}/publish/`. For example, here's a curl command to send a WebSocket message:
+Connecting to any of these endpoints will subscribe the connection to channel "test". The WebSocket endpoint echos back any messages it receives from the client.
+
+Data can be sent to the connections via the GRIP publish endpoint at `https://api.fastly.com/service/{service-id}/publish/`. For example, here's a curl command to send a WebSocket message:
 
 ```sh
 curl \
-  --user {service-id}:{secret} \
+  -H "Authorization: Bearer {fastly-api-token}" \
   -d '{"items":[{"channel":"test","formats":{"ws-message":{"content":"hello"}}}]}' \
-  https://fanout.fastly.com/{service-id}/publish/
+  https://api.fastly.com/service/{service-id}/publish/
 ```
 
 ## How it works
 
-For each call, the app is actually invoked twice. 
+Non-test requests are simply forwarded through the Fanout proxy and on to the origin.
+
+For test requests, the app is actually invoked twice.
 
 1. Initially, a client request arrives at the app without having been routed through the Fanout proxy yet. The app checks for this via the presence of a `Grip-Sig` header. If that header is not present, the app calls `req.handoff_fanout("self")` and exits. This tells the subsystem that the connection should be routed through Fanout, and is used for HTTP requests controlled by GRIP.
 
-2. Since `self` refers to the same app, a second request is made to the same app, this time coming through Fanout. The app checks for this, and then handles the request accordingly (in `handle()`).
+2. Since `self` refers to the same app, a second request is made to the same app, this time coming through Fanout. The app checks for this, and then handles the request accordingly (in `handle_test()`).
 
 ## Note
 
