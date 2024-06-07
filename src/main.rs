@@ -29,14 +29,18 @@ fn handle_fanout_ws(mut req: Request, chan: &str) -> Response {
     resp
 }
 
-fn handle_fanout(req: Request, chan: &str) -> Response {
+fn handle_test(req: Request, chan: &str) -> Response {
     match req.get_url().path() {
-        "/stream/long-poll" => fanout_util::grip_response("text/plain", "response", chan),
-        "/stream/plain" => fanout_util::grip_response("text/plain", "stream", chan),
-        "/stream/sse" => fanout_util::grip_response("text/event-stream", "stream", chan),
-        "/stream/websocket" => handle_fanout_ws(req, chan),
-        _ => Response::from_status(StatusCode::BAD_REQUEST).with_body("Invalid Fanout request\n"),
+        "/test/long-poll" => fanout_util::grip_response("text/plain", "response", chan),
+        "/test/stream" => fanout_util::grip_response("text/plain", "stream", chan),
+        "/test/sse" => fanout_util::grip_response("text/event-stream", "stream", chan),
+        "/test/websocket" => handle_fanout_ws(req, chan),
+        _ => Response::from_status(StatusCode::NOT_FOUND).with_body("No such test endpoint\n"),
     }
+}
+
+fn is_tls(req: &Request) -> bool {
+    req.get_url().scheme().eq_ignore_ascii_case("https")
 }
 
 fn main() -> Result<(), Error> {
@@ -45,21 +49,39 @@ fn main() -> Result<(), Error> {
         "FASTLY_SERVICE_VERSION: {}",
         std::env::var("FASTLY_SERVICE_VERSION").unwrap_or_else(|_| String::new())
     );
-    let req = Request::from_client();
 
-    // Request is a stream request - from client, or from fanout
-    if req.get_path().starts_with("/stream/") {
-        return Ok(if req.get_header_str("Grip-Sig").is_some() {
-            // Request is from Fanout
-            handle_fanout(req, "test").send_to_client()
-        } else {
-            // Not from fanout, hand it off to Fanout to manage
-            req.handoff_fanout("self")?
-        });
+    let mut req = Request::from_client();
+
+    let host = match req.get_url().host_str() {
+        Some(s) => s.to_string(),
+        None => {
+            return Ok(Response::from_status(StatusCode::NOT_FOUND)
+                .with_body("Unknown host\n")
+                .send_to_client());
+        }
+    };
+
+    let path = req.get_path().to_string();
+
+    if let Some(addr) = req.get_client_ip_addr() {
+        req.set_header("X-Forwarded-For", addr.to_string());
     }
 
-    // Forward all non-stream requests to the primary backend
-    let be_resp = req.send("primary_backend");
+    if is_tls(&req) {
+        req.set_header("X-Forwarded-Proto", "https");
+    }
 
-    Ok(be_resp?.send_to_client())
+    // Request is a test request - from client, or from Fanout
+    if host.ends_with(".edgecompute.app") && path.starts_with("/test/") {
+        if req.get_header_str("Grip-Sig").is_some() {
+            // Request is from Fanout, handle it here
+            return Ok(handle_test(req, "test").send_to_client());
+        } else {
+            // Not from Fanout, route it through Fanout first
+            return Ok(req.handoff_fanout("self")?);
+        }
+    }
+
+    // Forward all non-test requests to the origin
+    Ok(req.handoff_fanout("origin")?)
 }
