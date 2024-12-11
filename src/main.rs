@@ -9,20 +9,23 @@ fn handle_fanout_ws(mut req: Request, chan: &str) -> Response {
             .with_body("Not a WebSocket-over-HTTP request.\n");
     }
 
+    // Stream in the request body
     let req_body = req.take_body().into_bytes();
-    let mut resp_body: Vec<u8> = [].to_vec();
+
+    // echo the request body into the response
+    let mut resp_body = req_body.clone();
 
     let mut resp = Response::from_status(StatusCode::OK)
         .with_header("Content-Type", "application/websocket-events");
 
-    if req_body.starts_with(b"OPEN\r\n") {
-        resp.set_header("Sec-WebSocket-Extensions", "grip; message-prefix=\"\"");
-        resp_body.extend("OPEN\r\n".as_bytes());
+    // Is it an open message?
+    if req_body.len() >= 6 && &req_body[..6] == b"OPEN\r\n" {
+        // Subscribe it to the channel
         resp_body.extend(fanout_util::ws_sub(chan));
-    } else if req_body.starts_with(b"TEXT ") {
-        resp_body.extend(fanout_util::ws_text(
-            format!("You said: {}", std::str::from_utf8(&req_body).unwrap_or("")).as_str(),
-        ));
+
+        // Sec-WebSocket-Extension 'grip' - https://pushpin.org/docs/protocols/grip/#websocket
+        // "In order to enable GRIP functionality, the backend must include the grip extension in its response."
+        resp.set_header("Sec-WebSocket-Extensions", "grip; message-prefix=\"\"");
     }
 
     resp.set_body(resp_body);
