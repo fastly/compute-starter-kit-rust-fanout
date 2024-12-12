@@ -4,7 +4,7 @@
 
 Install this starter kit to use Fanout. It routes incoming requests through the Fanout GRIP proxy and on to an origin. It also provides some endpoints for testing subscriptions without an origin.
 
-There is no need to modify this kit. It is production-ready for typical Fanout usage that coordinates with an origin. However, if you would like to implement Fanout logic at the edge, this kit is also a good starting point for that and you can modify it to fit your needs. See the test endpoints for inspiration.
+There is no need to modify this starter kit. It is production-ready for typical Fanout usage that coordinates with an origin. However, if you would like to implement Fanout logic at the edge, this starter kit is also a good starting point for that, and you can modify it to fit your needs. See the test endpoints for inspiration.
 
 **For more details about this and other starter kits for Compute, see the [Fastly Documentation Hub](https://www.fastly.com/documentation/solutions/starters/)**.
 
@@ -23,7 +23,7 @@ For requests made to domains ending in `.edgecompute.app`, the app will handle r
 * `/test/sse`: SSE (streaming of `text/event-stream`)
 * `/test/long-poll`: Long-polling
 
-Connecting to any of these endpoints will subscribe the connection to channel "test". The WebSocket endpoint echos back any messages it receives from the client.
+Connecting to any of these endpoints will subscribe the connection to channel "test". The WebSocket endpoint echoes back any messages it receives from the client.
 
 Data can be sent to the connections via the GRIP publish endpoint at `https://api.fastly.com/service/{service-id}/publish/`. For example, here's a curl command to send a WebSocket message:
 
