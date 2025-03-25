@@ -58,9 +58,10 @@ fn main() -> Result<(), Error> {
     let host = match req.get_url().host_str() {
         Some(s) => s.to_string(),
         None => {
-            return Ok(Response::from_status(StatusCode::NOT_FOUND)
+            Response::from_status(StatusCode::NOT_FOUND)
                 .with_body("Unknown host\n")
-                .send_to_client());
+                .send_to_client();
+            return Ok(());
         }
     };
 
@@ -78,10 +79,12 @@ fn main() -> Result<(), Error> {
     if host.ends_with(".edgecompute.app") && path.starts_with("/test/") {
         if req.get_header_str("Grip-Sig").is_some() {
             // Request is from Fanout, handle it here
-            return Ok(handle_test(req, "test").send_to_client());
+            handle_test(req, "test").send_to_client();
+            return Ok(());
         } else {
             // Not from Fanout, route it through Fanout first
-            return Ok(req.handoff_fanout("self")?);
+            req.handoff_fanout("self")?;
+            return Ok(());
         }
     }
 

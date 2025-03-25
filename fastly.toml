@@ -1,8 +1,8 @@
-authors = ["<oss@fastly.com>"]
-description = "Implements Fanout handlers for WebSockets, SSE, etc."
-language = "rust"
-manifest_version = 2
 name = "Push messaging using Fanout"
+description = "Implements Fanout handlers for WebSockets, SSE, etc."
+authors = ["<devrel@fastly.com>"]
+language = "rust"
+manifest_version = 3
 
 [scripts]
-  build = "cargo build --bin fastly-compute-project --release --target wasm32-wasi --color always"
+  build = "cargo build --profile release"
