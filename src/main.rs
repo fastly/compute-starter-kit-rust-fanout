@@ -55,15 +55,12 @@ fn main() -> Result<(), Error> {
 
     let mut req = Request::from_client();
 
-    let host = match req.get_url().host_str() {
-        Some(s) => s.to_string(),
-        None => {
-            Response::from_status(StatusCode::NOT_FOUND)
-                .with_body("Unknown host\n")
-                .send_to_client();
-            return Ok(());
-        }
-    };
+    if req.get_url().host().is_none() {
+        Response::from_status(StatusCode::NOT_FOUND)
+            .with_body("Unknown host\n")
+            .send_to_client();
+        return Ok(());
+    }
 
     let path = req.get_path().to_string();
 
@@ -75,8 +72,8 @@ fn main() -> Result<(), Error> {
         req.set_header("X-Forwarded-Proto", "https");
     }
 
-    // Request is a test request - from client, or from Fanout
-    if host.ends_with(".edgecompute.app") && path.starts_with("/test/") {
+    // Request is a test request
+    if path.starts_with("/test/") {
         if req.get_header_str("Grip-Sig").is_some() {
             // Request is from Fanout, handle it here
             handle_test(req, "test").send_to_client();
