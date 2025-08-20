@@ -2,30 +2,85 @@
 
 [![Deploy to Fastly](https://deploy.edgecompute.app/button)](https://deploy.edgecompute.app/deploy)
 
-Install this starter kit to use Fanout. It routes incoming requests through the Fanout GRIP proxy and on to an origin. It also provides some endpoints for testing subscriptions without an origin.
-
-There is no need to modify this starter kit. It is production-ready for typical Fanout usage that coordinates with an origin. However, if you would like to implement Fanout logic at the edge, this starter kit is also a good starting point for that, and you can modify it to fit your needs. See the test endpoints for inspiration.
+Install this starter kit to use [Fanout](https://www.fastly.com/documentation/guides/concepts/real-time-messaging/fanout/), the real-time message broker operating at Fastly's edge. This starter kit routes incoming requests through the Fanout GRIP proxy and on to an origin. It also provides some endpoints for testing real-time messages without needing an origin.
 
 **For more details about this and other starter kits for Compute, see the [Fastly Documentation Hub](https://www.fastly.com/documentation/solutions/starters/)**.
 
+For the basic case, this starter kit may be used as-is to forward all traffic through Fanout to an origin.
+
+If you would like to implement Fanout logic at the edge, this starter kit is also a good starting point for that, and you can modify it to fit your needs. See the test endpoints for inspiration.
+
+## How it works
+
+For test requests (Paths under `/test/`), the app is actually invoked twice.
+
+1. Initially, a client request arrives at the app without having been routed through the Fanout proxy yet. The app checks for this via the presence of a `Grip-Sig` header. If that header is not present, the app calls `createFanoutHandoff(request, 'self')` and exits. This tells the subsystem that the connection should be routed through Fanout, and is used for HTTP requests controlled by GRIP.
+
+2. Since `self` refers to the same app, a second request is made to the same app, this time coming through Fanout. The app checks for this, and then handles the request accordingly (in `handleTest()`).
+
+Non-test requests are simply forwarded through the Fanout proxy and on to the origin.
+
+> [!IMPORTANT]
+> The starter kit forwards all non-test traffic through Fanout to the origin. In a production environment, be selective about the requests you send through Fanout. See [What to hand off to Fanout](https://www.fastly.com/documentation/guides/concepts/real-time-messaging/fanout/#what-to-hand-off-to-fanout) for a discussion on this topic.
+
 ## Setup
 
-The app expects a configured backend named "origin" where Fanout-capable requests should be forwarded to.
+The app expects a configured backend named `"origin"`. It forwards all non-test requests through Fanout to this backend.
 
-Additionally, for the test endpoints to work, the app expects a configured backend named "self" that points back to app itself. For example, if the service has a domain `foo.edgecompute.app`, then you'll need to create a backend on the service named "self" with the destination host set to `foo.edgecompute.app` and port 443. Also set "Override Host" to the same host value.
+Additionally, for the test endpoints to work, the app expects a configured backend named `"self"` that points back to app itself. For example, if the service has a domain `foo.edgecompute.app`, then you'll need to create a backend on the service named `"self"` with the destination host set to `foo.edgecompute.app` and port 443. Also set "Override Host" to the same host value.
+
+You'll also need to [enable Fanout](https://www.fastly.com/documentation/guides/concepts/real-time-messaging/fanout/#enable-fanout) on your Fastly service to run this application. To enable Fanout on your service, type:
+
+```shell
+fastly products --enable=fanout
+```
+
+## Local testing
+
+To test Fanout features in the local testing environment, first obtain [Pushpin](https://pushpin.org), the open-source GRIP proxy server that Fastly Fanout is based upon, and make sure it is available on the system path.
+
+Create a Fastly Compute project based on this starter kit.
+
+```term
+mkdir my-fanout-project
+cd my-fanout-project
+fastly compute init --from=https://github.com/fastly/compute-starter-kit-rust-fanout
+```
+
+The `fastly.toml` file included in this starter kit includes a `local_server.pushpin` section:
+```toml
+[local_server.pushpin]
+enable = true
+```
+
+Run the starter kit:
+```term
+fastly compute serve
+```
+
+The Fastly CLI starts Pushpin and then starts the starter kit app at http://localhost:7676/.  
 
 ## Test Endpoints
 
-For requests made to domains ending in `.edgecompute.app`, the app will handle requests to the following endpoints without forwarding to the origin:
+The app handles requests to the following endpoints at the edge:
 
-* `/test/websocket`: bi-directional WebSocket
 * `/test/stream`: HTTP streaming of `text/plain`
 * `/test/sse`: SSE (streaming of `text/event-stream`)
 * `/test/long-poll`: Long-polling
+* `/test/websocket`: bidirectional WebSocket
+  * In the example, the WebSocket endpoint is set up to echo back any messages it receives from the client.
 
-Connecting to any of these endpoints will subscribe the connection to channel "test". The WebSocket endpoint echoes back any messages it receives from the client.
+Connecting to any of these endpoints subscribes the connection to channel `"test"`.
 
-Data can be sent to the connections via the GRIP publish endpoint at `https://api.fastly.com/service/{service-id}/publish/`. For example, here's a curl command to send a WebSocket message:
+On the local testing environment, data can be sent to the connections via the GRIP publish endpoint at `http://localhost:5561/publish/`. For example, here's a curl command to send a WebSocket message:
+
+```sh
+curl \
+  -d '{"items":[{"channel":"test","formats":{"ws-message":{"content":"hello"}}}]}' \
+  http://localhost:5561/publish/
+```
+
+Once deployed to your Fastly service, the GRIP publish endpoint is at `https://api.fastly.com/service/{service-id}/publish/`. Here's the same example on Fastly service:
 
 ```sh
 curl \
