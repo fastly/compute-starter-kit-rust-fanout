@@ -29,13 +29,17 @@ The app expects a configured backend named `"origin"`. It forwards all non-test 
 
 Additionally, for the test endpoints to work, the app expects a configured backend named `"self"` that points back to app itself. For example, if the service has a domain `foo.edgecompute.app`, then you'll need to create a backend on the service named `"self"` with the destination host set to `foo.edgecompute.app` and port 443. Also set "Override Host" to the same host value.
 
-You'll also need to [enable Fanout](https://www.fastly.com/documentation/guides/concepts/real-time-messaging/fanout/#enable-fanout) on your Fastly service to run this application. To enable Fanout on your service, type:
+### Enabling Fanout
+
+The first time this starter kit is deployed to your service, Fanout is enabled automatically.
+
+To [enable Fanout](https://www.fastly.com/documentation/guides/concepts/real-time-messaging/fanout/#enable-fanout) support after the fact to an existing Fastly service, type:
 
 ```shell
 fastly products --enable=fanout
 ```
 
-## Local testing
+## Testing locally
 
 To test Fanout features in the local testing environment, first obtain [Pushpin](https://pushpin.org), the open-source GRIP proxy server that Fastly Fanout is based upon, and make sure it is available on the system path.
 
@@ -99,9 +103,14 @@ For test requests, the app is actually invoked twice.
 
 2. Since `self` refers to the same app, a second request is made to the same app, this time coming through Fanout. The app checks for this, and then handles the request accordingly (in `handle_test()`).
 
-## Note
+## Notes
 
-This app is not currently supported in Fastly's [local development server](https://www.fastly.com/documentation/guides/compute/testing/#running-a-local-testing-server), as the development server does not support Fanout features. To experiment with Fanout, you will need to publish this project to your Fastly Compute service. using the `fastly compute publish` command.
+The code in this starter kit cannot be used with the [`fastly::main` attribute](https://docs.rs/fastly/latest/fastly/attr.main.html) on the `main()` entry point. This is because a function decorated with `fastly::main` is expected to return a response, but handing off to Fanout is an action that does not create a response. Use an undecorated `main()` function instead, and use `Request::from_client()` and `Response::send_to_client()` as needed.
+
+## Compatibility
+
+- [Fastly CLI](https://www.fastly.com/documentation/reference/tools/cli/) 15.2.0 or newer
+- [Fastly Local Development Server (Viceroy)](https://www.fastly.com/documentation/guides/compute/developer-guides/testing/#running-a-local-testing-server) 0.18.0 or newer
 
 ## Security issues
 
