@@ -31,9 +31,9 @@ Additionally, for the test endpoints to work, the app expects a configured backe
 
 ### Enabling Fanout
 
-The first time this starter kit is deployed to your service, Fanout is enabled automatically.
+When you create a new service from this starter kit, Fanout is enabled automatically.
 
-To [enable Fanout](https://www.fastly.com/documentation/guides/concepts/real-time-messaging/fanout/#enable-fanout) support after the fact to an existing Fastly service, type:
+To [enable Fanout](https://www.fastly.com/documentation/guides/concepts/real-time-messaging/fanout/#enable-fanout) on an existing Fastly service, type:
 
 ```shell
 fastly products --enable=fanout
